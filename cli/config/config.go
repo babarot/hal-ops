@@ -5,46 +5,33 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
 
 	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
-	Core   CoreConfig   `toml:"core"`
-	Hal   HalConfig   `toml:"hal-ops"`
-	Flag   FlagConfig   `toml:"flag"`
-	Screen ScreenConfig `toml:"screen"`
+	Core        CoreConfig        `toml:"core"`
+	Hal         HalConfig         `toml:"hal"`
+	Integration IntegrationConfig `toml:"integration"`
 }
 
 type CoreConfig struct {
 	Editor    string `toml:"editor"`
 	SelectCmd string `toml:"selectcmd"`
 	TomlFile  string `toml:"tomlfile"`
-	User      string `toml:"user"`
 }
 
 type HalConfig struct {
-	Token       string        `toml:"token"`
-	BaseURL     string        `toml:"base_url"`
-	Dir         string        `toml:"dir"`
-	FileExt     string        `toml:"file_ext"`
-	UseCache    bool          `toml:"use_cache"`
-	CacheTTL    time.Duration `toml:"cache_ttl"`
-	RunnableExt []string      `toml:"runnable_ext"`
+	Token   string `toml:"token"`
+	BaseURL string `toml:"base_url"`
+	Dir     string `toml:"dir"`
+	Repo    string `toml:"repo"`
 }
 
-type FlagConfig struct {
-	OpenURL      bool `toml:"open_url"`
-	BlogMode     bool `toml:"blog_mode"`
-	StarredItems bool `toml:"starred"`
-
-	NewPrivate  bool `toml:"-"`
-	OpenBaseURL bool `toml:"-"`
-}
-
-type ScreenConfig struct {
-	Columns []string `toml:"columns"`
+type IntegrationConfig struct {
+	GitHubToken  string `toml:"github_token"`
+	SlackToken   string `toml:"slack_token"`
+	DataDogToken string `toml:"datadog_token"`
 }
 
 var Conf Config
@@ -95,27 +82,12 @@ func (cfg *Config) LoadFile(file string) error {
 	}
 	cfg.Core.SelectCmd = "fzf-tmux --multi:fzf --multi:peco"
 	cfg.Core.TomlFile = file
-	cfg.Core.User = os.Getenv("USER")
 
 	cfg.Hal.Token = os.Getenv("GITHUB_TOKEN")
 	cfg.Hal.BaseURL = "https://hal-ops.github.com"
 	dir := filepath.Join(filepath.Dir(file), "files")
 	os.MkdirAll(dir, 0700)
 	cfg.Hal.Dir = dir
-	cfg.Hal.FileExt = ".patch"
-	cfg.Hal.UseCache = true
-	cfg.Hal.CacheTTL = time.Hour * 24
-	cfg.Hal.RunnableExt = []string{"sh", "rb", "py", "pl", "php"}
-
-	cfg.Flag.OpenURL = true
-	cfg.Flag.BlogMode = true
-	cfg.Flag.StarredItems = false
-
-	cfg.Screen.Columns = []string{
-		"{{.ShortID}}",
-		"{{.PrivateMark}} {{.Filename}}",
-		"{{.Description}}",
-	}
 
 	return toml.NewEncoder(f).Encode(cfg)
 }
