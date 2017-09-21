@@ -42,24 +42,34 @@ func copyFile(src, dst string) error {
 }
 
 func check(cmd *cobra.Command, args []string) error {
-	c := command.New("bash hoge.sh")
-	if err := c.Run(); err != nil {
-		panic(err)
+	// c := command.New("bash hoge.sh")
+	// if err := c.Run(); err != nil {
+	// 	panic(err)
+	// }
+	// res := c.Result()
+	// fmt.Println(res.StdoutString())
+	// fmt.Printf("%#v %#v %#v\n", res.StdoutString(), res.StderrString(), res)
+	// return nil
+
+	var (
+		branch string
+		// stdout, stderr bytes.Buffer
+	)
+	if len(args) > 0 {
+		branch = args[0]
+		c := command.New("git checkout " + branch)
+		if err := c.Run(); err != nil {
+			return err
+		}
+		res := c.Result()
+		if res.Failed {
+			return fmt.Errorf(res.StderrString())
+		}
 	}
-	res := c.Result()
-	fmt.Println(res.StdoutString())
-	fmt.Printf("%#v %#v %#v\n", res.StdoutString(), res.StderrString(), res)
+	fmt.Println(branch)
 	return nil
 
 	/*
-		var branch string
-		if len(args) > 0 {
-			branch = args[0]
-			if err := cli.Run("git", "checkout", branch); err != nil {
-				return err
-			}
-		}
-		var stdout, stderr bytes.Buffer
 		c := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 		c.Stdout = &stdout
 		c.Stderr = &stderr
