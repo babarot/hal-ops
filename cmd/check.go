@@ -17,10 +17,6 @@ var checkCmd = &cobra.Command{
 	RunE:  check,
 }
 
-func convertString(b []byte) string {
-	return strings.TrimSuffix(string(b), "\n")
-}
-
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
@@ -42,19 +38,13 @@ func copyFile(src, dst string) error {
 }
 
 func check(cmd *cobra.Command, args []string) error {
-	// c := command.New("bash hoge.sh")
-	// if err := c.Run(); err != nil {
-	// 	panic(err)
-	// }
-	// res := c.Result()
-	// fmt.Println(res.StdoutString())
-	// fmt.Printf("%#v %#v %#v\n", res.StdoutString(), res.StderrString(), res)
-	// return nil
+	c := command.New("git rev-parse --abbrev-ref HEAD")
+	if err := c.Run(); err != nil {
+		return err
+	}
+	branch := c.Result().StdoutString()
 
-	var (
-		branch string
-		// stdout, stderr bytes.Buffer
-	)
+	// Checkout to it if an argument is given
 	if len(args) > 0 {
 		branch = args[0]
 		c := command.New("git checkout " + branch)
@@ -66,25 +56,14 @@ func check(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf(res.StderrString())
 		}
 	}
-	fmt.Println(branch)
+
+	if branch == "master" {
+		return fmt.Errorf("Error: you are on master branch")
+	}
+
 	return nil
 
 	/*
-		c := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-		c.Stdout = &stdout
-		c.Stderr = &stderr
-		if err := c.Run(); err != nil {
-			return err
-		}
-		if stderr.Len() > 0 {
-			return fmt.Errorf("hoge")
-		}
-
-		branch = convertString(stdout.Bytes())
-		if branch == "master" {
-			return fmt.Errorf("Error: current branch is master")
-		}
-
 		// if err := cli.Run("cp", ".hal/config", filepath.Join(os.Getenv("HOME"), ".hal", "config")); err != nil {
 		// 	return err
 		// }
