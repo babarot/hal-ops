@@ -3,14 +3,17 @@ package command
 import (
 	"bytes"
 	"errors"
+	"os"
 	"os/exec"
 	"os/user"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gobs/args"
+	shellquote "github.com/kballard/go-shellquote"
 )
 
 var errorTimeout = errors.New("error: execution timeout")
@@ -46,6 +49,13 @@ type Command struct {
 		workingDir  string
 		environment []string
 	}
+}
+
+func Escape(command string, args ...string) string {
+	for _, arg := range args {
+		command = shellquote.Join(command, arg)
+	}
+	return command
 }
 
 // New returns the Command struct to execute the named program with
@@ -218,7 +228,9 @@ func (c *Command) Result() *Result {
 }
 
 func (c *Command) Run() error {
-	c.Start()
+	if err := c.Start(); err != nil {
+		return err
+	}
 	return c.Wait()
 }
 
@@ -228,4 +240,17 @@ func (r *Result) StdoutString() string {
 
 func (r *Result) StderrString() string {
 	return strings.TrimSuffix(string(r.Stderr.Bytes()), "\n")
+}
+
+func (c *Command) RunWithTTY() error {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", c.command)
+	} else {
+		cmd = exec.Command("sh", "-c", c.command)
+	}
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }

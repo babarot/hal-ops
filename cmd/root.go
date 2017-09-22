@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/b4b4r07/hal-ops/cli/config"
+	"github.com/b4b4r07/hal-ops/config"
 	"github.com/spf13/cobra"
 )
 

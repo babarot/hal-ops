@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/b4b4r07/hal-ops/command"
 	"github.com/spf13/cobra"
@@ -12,8 +12,8 @@ import (
 
 var checkCmd = &cobra.Command{
 	Use:   "check",
-	Short: "check",
-	Long:  "check",
+	Short: "Checkout branch and validate config",
+	Long:  "Check if there are problems in config file",
 	RunE:  check,
 }
 
@@ -38,7 +38,9 @@ func copyFile(src, dst string) error {
 }
 
 func check(cmd *cobra.Command, args []string) error {
-	c := command.New("git rev-parse --abbrev-ref HEAD")
+	var c *command.Command
+
+	c = command.New("git rev-parse --abbrev-ref HEAD")
 	if err := c.Run(); err != nil {
 		return err
 	}
@@ -61,20 +63,16 @@ func check(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Error: you are on master branch")
 	}
 
-	return nil
+	var (
+		src  = filepath.Join(".hal", "config")
+		dest = filepath.Join(os.Getenv("HOME"), ".hal", "config")
+	)
+	if err := copyFile(src, dest); err != nil {
+		return err
+	}
 
-	/*
-		// if err := cli.Run("cp", ".hal/config", filepath.Join(os.Getenv("HOME"), ".hal", "config")); err != nil {
-		// 	return err
-		// }
-
-		dst := filepath.Join(os.Getenv("HOME"), ".hal", "config")
-		if err := copyFile(".hal/config", dst); err != nil {
-			return err
-		}
-
-		return cli.Run("hal", "config")
-	*/
+	c = command.New("hal config >/dev/null")
+	return c.RunWithTTY()
 }
 
 func init() {

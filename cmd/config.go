@@ -3,8 +3,8 @@ package cmd
 import (
 	"path/filepath"
 
-	"github.com/b4b4r07/hal-ops/cli"
-	"github.com/b4b4r07/hal-ops/cli/config"
+	"github.com/b4b4r07/hal-ops/command"
+	"github.com/b4b4r07/hal-ops/config"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,8 @@ func conf(cmd *cobra.Command, args []string) error {
 		dir, _ := config.GetDefaultDir()
 		tomlfile = filepath.Join(dir, "config.toml")
 	}
-	return cli.Run(editor, tomlfile)
+	c := command.New(command.Escape(editor, tomlfile))
+	return c.RunWithTTY()
 }
 
 func init() {
