@@ -30,6 +30,7 @@ type HalConfig struct {
 
 type IntegrationConfig struct {
 	GitHubToken  string `toml:"github_token"`
+	GitHubRepo   string `toml:"github_repo"`
 	SlackToken   string `toml:"slack_token"`
 	DataDogToken string `toml:"datadog_token"`
 }
