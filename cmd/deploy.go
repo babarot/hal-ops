@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/b4b4r07/hal-ops/command/git"
 	"github.com/b4b4r07/hal-ops/config"
 	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
@@ -21,10 +22,10 @@ var deployCmd = &cobra.Command{
 
 func deploy(cmd *cobra.Command, args []string) error {
 	if !strings.Contains(config.Conf.Integration.GitHubRepo, "/") {
-		return fmt.Errorf("config.intergration.github_repo: should be slash char like user/repo")
+		return fmt.Errorf("config.intergration.github_repo: should be slash char like owner/repo")
 	}
 	s := strings.Split(config.Conf.Integration.GitHubRepo, "/")
-	user := s[0]
+	owner := s[0]
 	repo := s[1]
 
 	ctx := context.Background()
@@ -41,7 +42,7 @@ func deploy(cmd *cobra.Command, args []string) error {
 
 	var pulls []*github.PullRequest
 	for {
-		pull, resp, err := cli.PullRequests.List(ctx, user, repo, opt)
+		pull, resp, err := cli.PullRequests.List(ctx, owner, repo, opt)
 		if err != nil {
 			return err
 		}
@@ -52,8 +53,12 @@ func deploy(cmd *cobra.Command, args []string) error {
 		opt.Page = resp.NextPage
 	}
 
-	branch := "test"
+	branch, err := git.GetCurrentBranchName()
+	if err != nil {
+		return err
+	}
 
+	num := 0
 	for _, pull := range pulls {
 		if pull.Head == nil {
 			continue
@@ -62,13 +67,22 @@ func deploy(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		if *pull.Head.Ref == branch {
-			n := pull.GetNumber()
-			if n != 0 {
-				fmt.Printf("%d", n)
+			num = pull.GetNumber()
+			if num != 0 {
 				break
 			}
 		}
 	}
+
+	msg := "Merge automatically by hal-ops"
+	_, _, err := cli.PullRequests.Merge(ctx, owner, repo, num, msg, opt)
+	if err != nil {
+		return err
+	}
+
+	// Send event log to Datadog
+
+	// Notify Slack
 
 	return nil
 }
