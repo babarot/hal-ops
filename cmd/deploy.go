@@ -74,8 +74,12 @@ func deploy(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if num == 0 {
+		return fmt.Errorf("Not found that P-R")
+	}
+
 	msg := "Merge automatically by hal-ops"
-	_, _, err := cli.PullRequests.Merge(ctx, owner, repo, num, msg, opt)
+	_, _, err = cli.PullRequests.Merge(ctx, owner, repo, num, msg, &github.PullRequestOptions{})
 	if err != nil {
 		return err
 	}

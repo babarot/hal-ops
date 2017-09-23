@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -42,12 +43,21 @@ func check(cmd *cobra.Command, args []string) error {
 		src  = filepath.Join(".hal", "config")
 		dest = filepath.Join(os.Getenv("HOME"), ".hal", "config")
 	)
+	// Backup
+	data, err := ioutil.ReadFile(dest)
+	if err != nil {
+		return err
+	}
 	if err := command.Cp(src, dest); err != nil {
 		return err
 	}
 
 	// Validation
 	c = command.New("hal config >/dev/null")
+	defer func() {
+		// Restore dest file if syntax is wrong
+		ioutil.WriteFile(dest, data, 0644)
+	}()
 	return c.RunWithTTY()
 }
 
